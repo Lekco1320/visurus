@@ -1,6 +1,5 @@
 from .style  import Style
 from .main   import main_menu, process
-from .scaler import *
 from .anchor import *
 from .mark   import *
 
@@ -9,7 +8,7 @@ __all__ = [
     "FixedScaler",
     "ScaleRef",
     "ProportionScaler",
-    "HorizonalAlignment",
+    "HorizontalAlignment",
     "VerticalAlignment",
     "Anchor",
     "ImageMark",

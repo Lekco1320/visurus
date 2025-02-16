@@ -1,45 +1,66 @@
 from enum import Enum
+from util import Vector2D, ScalableVector2D
 
-class HorizonalAlignment(Enum):
+_HALIGN_ANNOTATIONS = {
+    'LEFT'  : '左对齐',
+    'CENTER': '居中对齐',
+    'RIGHT' : '右对齐',
+}
+
+class HorizontalAlignment(Enum):
     LEFT   = 0
     CENTER = 1
     RIGHT  = 2
+    
+    def __str__(self):
+        return _HALIGN_ANNOTATIONS[self.name]
+
+_VALIGN_ANNOTATIONS = {
+    'TOP'   : '顶部对齐',
+    'CENTER': '居中对齐',
+    'BOTTOM': '底部对齐',
+}
 
 class VerticalAlignment(Enum):
     TOP    = 0
     CENTER = 1
     BOTTOM = 2
+    
+    def __str__(self):
+        return _VALIGN_ANNOTATIONS[self.name]
 
 class Anchor:
-    def __init__(self, position: tuple[int, int], offset: tuple[int, int], halign = HorizonalAlignment.LEFT, valign = VerticalAlignment.TOP):        
+    def __init__(self, position: Vector2D, offset: ScalableVector2D, halign = HorizontalAlignment.LEFT, valign = VerticalAlignment.TOP):        
         self._position = position
         self._offset   = offset
         self._halign   = halign
         self._valign   = valign
-
+    
     @property
-    def position(self):
+    def position(self) -> Vector2D:
         return self._position
     
     @property
-    def hAilgn(self):
+    def offset(self) -> ScalableVector2D:
+        return self._offset
+    
+    @property
+    def hAilgn(self) -> HorizontalAlignment:
         return self._halign
     
     @property
-    def vAlign(self):
+    def vAlign(self) -> VerticalAlignment:
         return self._valign
     
-    def real_position(self, size: tuple[int, int]) -> tuple[int, int]:
+    def real_position(self, size: tuple[int, int]) -> Vector2D:
         width, height = size
         x, y = self._position
-        if   self._halign == HorizonalAlignment.RIGHT:
+        if   self._halign == HorizontalAlignment.RIGHT:
             x -= width
-        elif self._halign == HorizonalAlignment.CENTER:
+        elif self._halign == HorizontalAlignment.CENTER:
             x -= width / 2
         if   self._valign == VerticalAlignment.BOTTOM:
             y -= height
         elif self._valign == VerticalAlignment.CENTER:
             y -= height / 2
-        x += self._offset[0]
-        y += self._offset[1]
-        return (int(x), int(y))
+        return Vector2D(int(x), int(y))

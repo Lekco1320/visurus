@@ -37,7 +37,7 @@ def style_main(style: Style):
 @util.errhandler
 def set_radius(style: Style):
     util.print_output('请输入圆角半径:')
-    value = input.input_int(lLimit=[0, True])
+    value = input.input_number(validation=lambda x: x >= 0)
     style.radius = value
 
 def get_radius(style: Style) -> str:

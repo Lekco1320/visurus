@@ -1,10 +1,9 @@
 import util
 import random
 
-from .scaler import *
 from .anchor import *
 from .mark   import *
-from .style  import Style
+from .style  import Position, ContentType, Style
 
 from app import output
 from app import workspace
@@ -47,66 +46,45 @@ def choose_targets():
 
 #region 图像处理
 
-def get_scaler(style: Style, size: tuple[int, int]) -> Scaler:
-    sscaler = None
-    if  style.scale[0] == '固定尺寸':
-        sscaler = FixedScaler(style.scale[1][0], style.scale[1][1])
+def get_position(style: Style, size: tuple[int, int], offset: ScalableVector2D) -> util.Vector2D:
+    key = style.position
+    pos = None
+    if   key == Position.RANDOM:
+        pos = util.Vector2D(random.randint(0, size[0]), random.randint(0, size[1]))
+    elif key == Position.TOP_LEFT:
+        pos = util.Vector2D(0, 0)
+    elif key == Position.TOP_CENTER:
+        pos = util.Vector2D(int(size[0] / 2), 0)
+    elif key == Position.TOP_RIGHT:
+        pos = util.Vector2D(size[0], 0)
+    elif key == Position.CENTER_LEFT:
+        pos = util.Vector2D(0, int(size[1] / 2))
+    elif key == Position.CENTER_CENTER:
+        pos = util.Vector2D(int(size[0] / 2), int(size[1] / 2))
+    elif key == Position.CENTER_RIGHT:
+        pos = util.Vector2D(size[0], int(size[1] / 2))
+    elif key == Position.BOTTOM_LEFT:
+        pos = util.Vector2D(0, size[1])
+    elif key == Position.BOTTOM_CENTER:
+        pos = util.Vector2D(int(size[0] / 2), size[1])
+    elif key == Position.BOTTOM_RIGHT:
+        pos = util.Vector2D(size[0], size[1])
+    pos += offset.scale(size)
+    return pos
+
+def get_anchor(style: Style, position: util.Vector2D) -> Anchor:
+    return Anchor(position, style.offset, style.aligns[0], style.aligns[1])
+
+def get_mark(style: Style, anchor: Anchor, scaler: util.AutoScalableVector2D) -> MarkBase:
+    if style.content == ContentType.TEXT:
+        return LabelMark(anchor, scaler, resources.get(style.font), style.color, style.text)
     else:
-        ref     = ScaleRef.HEIGHT if style.scale[1] == '高' else ScaleRef.WIDTH
-        sscaler = ProportionScaler(ref, style.scale[2], size)
-    return sscaler
-
-def get_position(style: Style, size: tuple[int, int]) -> tuple[int, int]:
-    if   style.position == '随机':
-        return (random.randint(0, size[0]), random.randint(0, size[1]))
-    elif isinstance(style.position, tuple):
-        return style.position
-    key  = style.position[2:]
-    if   key == '左上角':
-        return (0, 0)
-    elif key == '上中央':
-        return (int(size[0] / 2), 0)
-    elif key == '右上角':
-        return (size[0], 0)
-    elif key == '正左侧':
-        return (0, int(size[1] / 2))
-    elif key == '正中央':
-        return (int(size[0] / 2), int(size[1] / 2))
-    elif key == '正右侧':
-        return (size[0], int(size[1] / 2))
-    elif key == '左下角':
-        return (0, size[1])
-    elif key == '下中央':
-        return (int(size[0] / 2), size[1])
-    elif key == '右下角':
-        return (size[0], size[1])
-
-def get_anchor(style: Style, position: tuple[int, int]) -> Anchor:
-    haligndict = {
-        '左对齐'   : HorizonalAlignment.LEFT,
-        '居中对齐' : HorizonalAlignment.CENTER,
-        '右对齐'   : HorizonalAlignment.RIGHT
-    }
-    valigndict = {
-        '顶部对齐' : VerticalAlignment.TOP,
-        '居中对齐' : VerticalAlignment.CENTER,
-        '底部对齐' : VerticalAlignment.BOTTOM
-    }
-    return Anchor(position, style.offset, haligndict[style.aligns[0]], valigndict[style.aligns[1]])
-
-def get_mark(style: Style, anchor: Anchor, scaler: Scaler) -> MarkBase:
-    mark = None
-    if  style.content == '文字':
-        mark = LabelMark(anchor, scaler, resources.get(style.font), style.color, style.text)
-    else:
-        mark = ImageMark(anchor, scaler, style.psource, style.opacity)
-    return mark
+        return ImageMark(anchor, scaler, style.psource, style.opacity)
 
 def process(style: Style, img: Image.Image) -> Image.Image:
-    position = get_position(style, img.size)
+    position = get_position(style, img.size, style.offset)
     anchor   = get_anchor(style, position)
-    scaler   = get_scaler(style, img.size)
-    mark     = get_mark(style, anchor, scaler)
+    mark     = get_mark(style, anchor, style.scale)
     return mark.mark(img)
 
 @util.errhandler

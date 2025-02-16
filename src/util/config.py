@@ -58,7 +58,8 @@ class Config:
                 if isinstance(value, Config):
                     if self.self_validate():
                         ret = True
-                elif callable(field.predicate) and field.predicate(value):
+                elif callable(field.predicate) and field.predicate(value) or \
+                     not isinstance(value, type(field.default)):
                     ret = True
             else:
                 ret = True

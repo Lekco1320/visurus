@@ -78,9 +78,9 @@ class InImage:
         value = data.get(key, None)
         return formatfunc(value) if value != None else default
     
-    def info(self, fstr: str = "* xx. {} @0000x0000 *") -> AnsiStream:
+    def info(self, fstr: str = "* xx. {} @0000×0000 *") -> AnsiStream:
         return fomit_path(fstr, self._path) + \
-               AnsiStr(f' @{self._width}x{self._height}', FORMAT_ANNO)
+               AnsiStr(f' @{self._width}×{self._height}', FORMAT_ANNO)
 
 class OutImage:
     def __init__(self, image: Image.Image, src: InImage = None):
@@ -109,7 +109,7 @@ class OutImage:
         self._image = self._image.convert(mode)
     
     def formated_name(self) -> AnsiStream:
-        return fomit_str('* xx. {} @0000x0000 *', self._name) + \
-               AnsiStr(f' @{self._width}x{self._height}', FORMAT_ANNO)
+        return fomit_str('* xx. {} @0000×0000 *', self._name) + \
+               AnsiStr(f' @{self._width}×{self._height}', FORMAT_ANNO)
 
 __all__ = ["InImage", "OutImage", "IMAGE_EXTENSIONS", "IMAGE_FILETYPES"]

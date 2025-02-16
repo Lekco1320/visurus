@@ -137,7 +137,6 @@ def f_value() -> str:
     return CONFIG.format
 
 def n_display(): 
-    util.true_clear_screen()
     util.print_left('下列参数以给定占位符表示:')
     colored = lambda c: util.AnsiStr(c, util.FORMAT_VALUE)
     util.print_left(colored('{N}') + ' | 源文件名')
@@ -151,7 +150,8 @@ def n_display():
     util.print_splitter()
 
 @util.errhandler
-def n_main(): 
+def n_main():
+    util.true_clear_screen()
     util.print_title('Lekco Visurus - 文件名格式')
     n_display()
     util.print_output('请输入参数对应的占位符:')

@@ -1,14 +1,14 @@
-from abc import ABC
-from abc import abstractmethod
-from PIL import Image
-from PIL import ImageDraw
-from PIL import ImageFont
+from abc  import ABC
+from abc  import abstractmethod
+from PIL  import Image
+from PIL  import ImageDraw
+from PIL  import ImageFont
+from util import Color, Vector2D, AutoScale, AutoScalableVector2D
 
 from .anchor import Anchor
-from .scaler import Scaler
 
 class MarkBase(ABC):
-    def __init__(self, anchor: Anchor, scaler: Scaler) -> None:
+    def __init__(self, anchor: Anchor, scaler: AutoScalableVector2D) -> None:
         super().__init__()
         
         self._anchor = anchor
@@ -22,90 +22,53 @@ class MarkBase(ABC):
     def scaler(self):
         return self._scaler
     
-    @property
-    @abstractmethod
-    def size(self):
-        pass
-    
     @abstractmethod
     def mark(self, image: Image.Image) -> Image.Image:
         pass
 
 class ImageMark(MarkBase):
-    def __init__(self, anchor: Anchor, scaler: Scaler, image: str, opacity: float) -> None:
+    def __init__(self, anchor: Anchor, scaler: AutoScalableVector2D, image: str, opacity: float) -> None:
         super().__init__(anchor, scaler)
         
         self._image   = image
-        self._size    = None
         self._opacity = opacity
-        self._initialize()
-    
-    def _initialize(self):
-        width, height = self._scaler.size
-        iwdith = 0
-        iheight = 0
-        with Image.open(self._image) as image:
-            iwdith  = image.width
-            iheight = image.height
-        if   (width, height) == (None, None):
-            self._size = (iwdith, iheight)
-        elif width == None:
-            width = int(height / iheight * iwdith)
-            self._size = (width, height)
-        else:
-            height = int(width / iwdith * iheight)
-            self._size = (width, height)
-    
+        
     @property
     def image(self):
-        return self.image
-    
-    @property
-    def size(self):
-        return self._size
+        return self._image
     
     @property
     def opacity(self):
         return self._opacity
     
+    def _scale(self, refsize: tuple[int, int]) -> Vector2D:
+        with Image.open(self._image) as image:
+            return self._scaler.scale(refsize, image.size)
+    
     def mark(self, image: Image.Image) -> Image.Image:
-        position = self._anchor.real_position(self._size)
+        size     = self._scale(image.size)
+        position = self._anchor.real_position(size)
         with Image.open(self._image).convert('RGBA') as img:
-            nimg = img.resize(self._size)
+            nimg = img.resize(size)
             pale = Image.new('RGBA', nimg.size, (0, 0, 0, 0))
             aimg = Image.blend(pale, nimg, self._opacity / 100.0)
             image.paste(aimg, position, aimg)
             return image
 
 class LabelMark(MarkBase):
-    def __init__(self, anchor: Anchor, scaler: Scaler, font: str, color: tuple, text: str) -> None:
+    def __init__(self, anchor: Anchor, scaler: AutoScalableVector2D, font: str, color: Color, text: str) -> None:
         super().__init__(anchor, scaler)
-
+        
+        if not (
+            (scaler.x_number() or scaler.x_scalable()) and scaler.y_auto() or
+            (scaler.x_number() or scaler.y_scalable()) and scaler.x_auto()
+        ):
+            raise ValueError('文字水印的尺寸必须以值或比例指定长或宽.')
+        
         self._font      = font
+        self._scaler    = scaler
         self._color     = color
         self._text      = text
-        self._size      = None
-        self._font_size = None
-        self._initialize()
-    
-    def _initialize(self):
-        width, height = self._scaler.size
-        if (width, height) == (None, None):
-            raise ValueError('文字水印的尺寸大小不得为长宽自适应.')
-        if width == None:
-            self._font_size = height
-            font  = ImageFont.truetype(self._font, height)
-            width = font.getlength(self._text)
-            self._size = (width, height)
-        else:
-            size   = 0
-            length = 0
-            while length < width:
-                size  += 1
-                font   = ImageFont.truetype(self._font, size)
-                length = font.getlength(self._text)
-            self._size = (length, size)
-            self._font_size = size
     
     @property
     def font(self):
@@ -118,14 +81,29 @@ class LabelMark(MarkBase):
     @property
     def color(self):
         return self._color
-    
-    @property
-    def size(self):
-        return self._size
+
+    def _scale(self, refsize: tuple[int, int]) -> tuple[tuple[int, int], int]:
+        scaled = super(AutoScalableVector2D, self._scaler).scale(refsize)
+        width, height = scaled.x, scaled.y
+        if isinstance(width, AutoScale):
+            _font_size = height
+            font  = ImageFont.truetype(self._font, height)
+            width = font.getlength(self._text)
+            _size = (width, height)
+            return (_size, _font_size)
+        else:
+            size   = 0
+            length = 0
+            while length < width:
+                size  += 1
+                font   = ImageFont.truetype(self._font, size)
+                length = font.getlength(self._text)
+            return ((length, size), size)
     
     def mark(self, image: Image.Image) -> Image.Image:
-        position = self._anchor.real_position(self._size)
-        font = ImageFont.truetype(self._font, self._font_size)
+        size, font_size = self._scale(image.size)
+        position = self._anchor.real_position(size)
+        font = ImageFont.truetype(self._font, font_size)
         text = Image.new('RGBA', image.size, (0, 0, 0, 0))
         draw = ImageDraw.Draw(text)
         draw.text(position, self._text, self._color.tuple, font)

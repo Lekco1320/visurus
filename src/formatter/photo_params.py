@@ -81,7 +81,7 @@ def single_main(image: util.InImage):
     m.run()
 
 def display(image: util.InImage):
-    util.print_left('当前图像: ' + image.info('* 当前图像: {} @0000x0000 *'))
+    util.print_left('当前图像: ' + image.info('* 当前图像: {} @0000×0000 *'))
     util.print_splitter()
 
 #endregion
@@ -266,12 +266,12 @@ def blur_main():
 @util.errhandler
 def blur_set_blur():
     util.print_output('请输入模糊半径:')
-    CONFIG.back_blur[2] = input.input_int(lLimit=[0, True])
+    CONFIG.back_blur[2] = input.input_number(validation=lambda x: x >= 0)
 
 @util.errhandler
 def blur_set_brightness():
     util.print_output('请输入亮度(%):')
-    ans = input.input_float(lLimit=[0, True], uLimit=[100, True])
+    ans = input.input_number(validation=lambda x: 0 <= x <= 100)
     CONFIG.back_blur[3] = ans / 100
 
 #endregion

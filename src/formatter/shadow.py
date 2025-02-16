@@ -7,8 +7,8 @@ from PIL import ImageFilter
 class Style(util.Config):
     FIELDS = [
         util.Field('color',  util.Color('#0000007F')),
-        util.Field('offset', (10, 10)),
-        util.Field('limit',  (8, 8)),
+        util.Field('offset', util.Vector2D(10, 10)),
+        util.Field('limit',  util.Vector2D(8, 8)),
         util.Field('blur',   5),
     ]
     
@@ -49,16 +49,16 @@ def get_color(style: Style) -> str:
 
 @util.errhandler
 def set_offset(style: Style):
-    util.print_output('请输入偏移量 x,y :')
-    style.offset = input.input_int_coordinate()
+    util.print_output('请输入偏移量(x, y):')
+    style.offset = input.input_vector2d()
 
 def get_offset(style: Style) -> str:
     return style.offset.__str__()
 
 @util.errhandler
 def set_limit(style: Style):
-    util.print_output('请输入范围限制 x,y:')
-    style.limit = input.input_int_coordinate()
+    util.print_output('请输入范围限制(x, y):')
+    style.limit = input.input_vector2d()
 
 def get_limit(style: Style) -> str:
     return style.limit.__str__()
@@ -66,13 +66,13 @@ def get_limit(style: Style) -> str:
 @util.errhandler
 def set_blur(style: Style):
     util.print_output('请输入模糊程度(>=0):')
-    style.blur = input.input_int(lLimit=[0, True])
+    style.blur = input.input_number(validation=lambda x: x >= 0)
 
 def get_blur(style: Style) -> str:
     return style.blur.__str__()
 
 def process(style: Style, image: Image.Image) -> Image.Image:
-    return _blur(image, style.offset, style.limit, style.color, style.blur)
+    return _blur(image, style.offset.tuple(), style.limit.tuple(), style.color, style.blur)
 
 # https://code.activestate.com/recipes/474116-drop-shadows-with-pil/
 def _blur(image: Image.Image, offset: tuple, limit: tuple, color: util.Color, depth: int) -> Image.Image:

@@ -54,13 +54,13 @@ def margin_main(attrname: str):
 @util.errhandler
 def margin_fixed(attrname: str):
     util.print_output('请输入尺寸值(>0):')
-    value = input.input_int(lLimit=[0, False])
+    value = input.input_number(validation=lambda x: x > 0)
     setattr(CONFIG, attrname, value)
 
 @util.errhandler
 def margin_propotion(attrname: str):
     util.print_output('请输入比例(%):')
-    value = input.input_float(lLimit=[0, False])
+    value = input.input_number(validation=lambda x: x > 0)
     setattr(CONFIG, attrname, value)
 
 def margin_value(attrname: str):
